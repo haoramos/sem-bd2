@@ -1,0 +1,283 @@
+<title>Seminário Greenplum</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coluna única de leitura (~780px), navegação por âncoras, teoria primeiro e prática enxuta depois. */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --fg:#1b2127; --muted:#5a6672; --line:#d9dee3;
+  --accent:#1f5f8b; --accent-soft:#e3eef6; --warn:#9a5b00; --warn-soft:#fbf0dc;
+  --code-bg:#eef1f4;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13181c; --surface:#1b2227; --fg:#e6eaee; --muted:#9aa6b1; --line:#2d363d;
+    --accent:#6db3e3; --accent-soft:#1d2f3c; --warn:#e8b560; --warn-soft:#33291a;
+    --code-bg:#222b31; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13181c; --surface:#1b2227; --fg:#e6eaee; --muted:#9aa6b1; --line:#2d363d;
+  --accent:#6db3e3; --accent-soft:#1d2f3c; --warn:#e8b560; --warn-soft:#33291a;
+  --code-bg:#222b31; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:16px; line-height:1.6;
+  padding-block:32px 64px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:40px;min-width:0}
+header{display:flex;flex-direction:column;gap:12px}
+.kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--font-head);font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:65ch}
+.status{background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:10px 14px;font-size:14px}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:999px}
+nav a:hover,nav a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+section{display:flex;flex-direction:column;gap:14px;min-width:0;scroll-margin-top:16px}
+h2{font-family:var(--font-head);font-size:24px;margin:0;line-height:1.25;text-wrap:balance}
+h3{font-family:var(--font-head);font-size:17px;margin:8px 0 0}
+p{margin:0;max-width:68ch}
+ul,ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;max-width:68ch}
+.question{background:var(--accent-soft);border-left:4px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;font-size:18px;font-weight:500;max-width:none}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--code-bg)}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:600;white-space:nowrap}
+code{font-family:var(--font-mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre{margin:0;font-family:var(--font-mono);font-size:13px;line-height:1.5;background:var(--code-bg);padding:14px 16px;border-radius:8px;overflow-x:auto}
+pre code{background:none;padding:0;font-size:inherit}
+pre.mermaid{background:var(--surface);border:1px solid var(--line);text-align:center}
+.note{font-size:14px;color:var(--muted);max-width:68ch}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.cols>div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cols b{font-family:var(--font-head)}
+.cols span{font-size:14px;color:var(--muted)}
+.decision{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+a{color:var(--accent)}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="kicker">Banco de Dados 2 · Seminário</span>
+  <h1>Banco de dados distribuído: quando compensa? Uma análise com o Greenplum</h1>
+  <p class="lede">Roteiro do seminário: primeiro a teoria (por que distribuir e como o Greenplum funciona), depois uma parte prática enxuta com benchmark e ingestão de dados orquestrada pelo Airflow.</p>
+  <div class="status">Rascunho do grupo. A teoria da seção 2 foi conferida no artigo do Greenplum (SIGMOD 2021). Itens marcados <span class="tag warn">a validar</span> vêm de conhecimento geral e precisam ser checados na documentação oficial ou na prática.</div>
+  <nav aria-label="Seções">
+    <a href="#tema">Tema</a>
+    <a href="#teoria">Como o Greenplum funciona</a>
+    <a href="#roteiro">Roteiro do seminário</a>
+    <a href="#pratica">Parte prática</a>
+    <a href="#ingestao">Ingestão com Airflow</a>
+    <a href="#cronograma">Cronograma</a>
+    <a href="#referencias">Referências</a>
+  </nav>
+</header>
+
+<section id="tema">
+  <h2>1. Tema e pergunta</h2>
+  <p class="question">Quando vale a pena distribuir um banco de dados? Em que ponto um Greenplum com vários segmentos supera um PostgreSQL de nó único, e o que muda esse ponto?</p>
+  <p>O artigo do Greenplum justifica a distribuição por três limites de uma máquina só: <b>escalabilidade de dados</b> (não cabe tudo), <b>escalabilidade de computação</b> (CPU, memória e I/O limitam a concorrência) e <b>alta disponibilidade</b> (se o nó cai, o sistema cai).</p>
+  <p>O contraponto vem de McSherry et al. (HotOS 2015), com a métrica <b>COST</b>: a configuração mínima que supera uma implementação single-thread competente. Muitos sistemas distribuídos precisam de centenas de cores para isso. Distribuir tem custo, e o seminário pergunta quando ele se paga.</p>
+</section>
+
+<section id="teoria">
+  <h2>2. Como o Greenplum funciona</h2>
+  <p>Base: artigo <i>Greenplum: A Hybrid Database for Transactional and Analytical Workloads</i> (SIGMOD 2021), seção 3 em especial.</p>
+
+<pre class="mermaid">
+flowchart TD
+  C[Cliente] --> CO[Coordinator]
+  CO -->|plano dividido em slices| S1[Segmento 1]
+  CO -->|plano dividido em slices| S2[Segmento 2]
+  CO -->|plano dividido em slices| S3[Segmento 3]
+  S1 <-->|Interconnect: motions| S2
+  S2 <-->|Interconnect: motions| S3
+  S1 -.->|WAL| M1[Mirror 1]
+  S2 -.->|WAL| M2[Mirror 2]
+  S3 -.->|WAL| M3[Mirror 3]
+  CO -.->|WAL| SB[Standby]
+</pre>
+
+  <div class="cols">
+    <div><b>Arquitetura shared-nothing</b><span>Cada segmento é um PostgreSQL ampliado, com memória e diretório de dados próprios. Coordinator e segmentos só se comunicam pela rede.</span></div>
+    <div><b>Coordinator</b><span>Recebe as consultas do cliente, gera o plano distribuído, cria os processos, despacha o plano, reúne os resultados e responde ao cliente.</span></div>
+    <div><b>Segmentos</b><span>Guardam os dados do usuário e executam sua parte do plano. Mirrors e standby não calculam: recebem o WAL do primário e o reaplicam continuamente.</span></div>
+  </div>
+
+  <h3>2.1 Plano distribuído: Motion, slice e gang</h3>
+  <p>Para juntar duas tabelas, as tuplas que casam precisam estar no mesmo segmento. O Greenplum implementa essa movimentação com um nó de plano novo, o <b>Motion</b>. Cada Motion corta o plano em pedaços chamados <b>slices</b>, e cada slice roda em um grupo de processos distribuídos, a <b>gang</b>. Todos executam o mesmo plano com contexto e dados locais (técnica SPMD, Single Program Multiple Data).</p>
+  <p>Tipos de Motion que aparecem nos planos: <code>Redistribute</code> (reenvia tuplas por outra chave), <code>Gather</code> (junta tudo no coordinator) e <code>Broadcast</code> (copia uma tabela para todos os segmentos). Os dois primeiros aparecem no próprio artigo; o <code>Broadcast</code> vem da documentação, <span class="tag warn">a validar</span>.</p>
+<pre><code>-- Exemplo do artigo (Figura 4)
+CREATE TABLE student (id int, name text) DISTRIBUTED BY (id);
+CREATE TABLE class   (id int, name text) DISTRIBUTED RANDOMLY;
+SELECT * FROM student JOIN class USING (id);
+-- class precisa de Redistribute Motion para o join acontecer</code></pre>
+  <p class="note">Por que isso importa para a pergunta do seminário: a chave de distribuição decide se um join precisa de Motion. Motion usa a rede, e é daí que vem boa parte do custo de distribuir.</p>
+
+  <h3>2.2 Distribuição dos dados</h3>
+  <ul>
+    <li><code>DISTRIBUTED BY (coluna)</code>: as linhas vão para o segmento conforme o hash da chave.</li>
+    <li><code>DISTRIBUTED RANDOMLY</code>: distribuição sem chave, equilibrada mas sem co-localização.</li>
+    <li><code>DISTRIBUTED REPLICATED</code>: cópia completa em todos os segmentos, útil para tabelas pequenas. <span class="tag warn">a validar</span></li>
+    <li><b>Skew:</b> uma chave com poucos valores distintos concentra dados em poucos segmentos, e o mais lento define o tempo da consulta.</li>
+  </ul>
+
+  <h3>2.3 Armazenamento e otimizador</h3>
+  <ul>
+    <li><b>Heap:</b> tabelas nativas do PostgreSQL, boas para atualizações e deletes frequentes.</li>
+    <li><b>AO-row e AO-column</b> (append-optimized): favorecem I/O em bloco e são mais adequadas a análise. No AO-column cada coluna fica em um arquivo, o que reduz I/O em tabelas largas. Compressão disponível (zstd, quicklz, zlib e RLE com delta, por coluna).</li>
+    <li><b>Particionamento</b> por lista ou intervalo, e cada partição pode ter um tipo de armazenamento diferente (heap, AO ou tabela externa).</li>
+    <li><b>Otimizadores:</b> Orca (baseado em custo, para consultas analíticas complexas) e o planejador do PostgreSQL adaptado a MPP (planos simples e rápidos, para transacional). Dá para escolher por consulta, sessão ou banco.</li>
+  </ul>
+
+  <h3>2.4 Transações distribuídas</h3>
+  <ul>
+    <li>Cada segmento é um PostgreSQL, e a transação confirma ou aborta em todos de forma síncrona.</li>
+    <li>ACID via <b>snapshots distribuídos</b> e <b>two-phase commit</b>.</li>
+    <li>O artigo propõe um <b>detector de deadlock global</b> e <b>commit em uma fase</b> para transações que escrevem em um único segmento, além de <b>resource groups</b> para isolar cargas. Foi o que tornou o OLTP viável.</li>
+  </ul>
+
+  <h3>2.5 Interconnect</h3>
+  <p>O tráfego entre slices usa por padrão UDP, com confirmação (ACK) do receptor para garantir confiabilidade (apêndice do artigo). Esse é mais um custo da distribuição: protocolo próprio sobre a rede.</p>
+
+  <h3>2.6 Limitações e contexto</h3>
+  <ul>
+    <li>Pensado para análise em larga escala. OLTP é uma extensão, com os ajustes descritos no artigo.</li>
+    <li>Estado do projeto: pelo que sei, o repositório open source foi arquivado em 2024 e há forks da comunidade (WarehousePG, Apache Cloudberry). <span class="tag warn">a validar</span> antes do seminário, porque afeta a relevância e a instalação.</li>
+  </ul>
+</section>
+
+<section id="roteiro">
+  <h2>3. Roteiro do seminário</h2>
+  <p class="note">Os tempos são uma sugestão. Ajustar à duração definida pelo professor.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Bloco</th><th>Conteúdo</th><th>Tempo</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Motivação: limites de um nó só e a crítica do COST</td><td>3 min</td></tr>
+      <tr><td>2</td><td>Arquitetura: coordinator, segmentos, mirrors, interconnect</td><td>5 min</td></tr>
+      <tr><td>3</td><td>Execução distribuída: Motion, slice e gang, com o exemplo do artigo</td><td>5 min</td></tr>
+      <tr><td>4</td><td>Distribuição dos dados, skew e armazenamento (heap, AO, colunar)</td><td>4 min</td></tr>
+      <tr><td>5</td><td>Transações distribuídas e otimizador (Orca)</td><td>3 min</td></tr>
+      <tr><td>6</td><td>Resultados práticos: benchmark e ingestão (ou plano, se ainda não rodou)</td><td>5 min</td></tr>
+      <tr><td>7</td><td>Resposta à pergunta: quando compensa, e quando não</td><td>2 min</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="pratica">
+  <h2>4. Parte prática enxuta: benchmark</h2>
+  <p>Versão mínima para caber no seminário. A versão completa (mais escalas e estratégias) fica para o TCC.</p>
+  <ul>
+    <li><b>Comparação:</b> PostgreSQL de nó único (ajustado, com paralelismo ligado) contra Greenplum com os mesmos recursos totais.</li>
+    <li><b>Dados:</b> TPC-H gerado com o <code>dbgen</code>, fatores de escala 1 e 10 (30 se o disco e a RAM permitirem). Chamar de "baseado em TPC-H".</li>
+    <li><b>Estratégias de distribuição:</b> E1 co-localizada (<code>lineitem</code> e <code>orders</code> por <code>orderkey</code>), E2 aleatória, E3 chave ruim (<code>lineitem</code> por <code>l_returnflag</code>).</li>
+    <li><b>Queries:</b> Q1 e Q6 (scan e agregação), Q3 e Q5 (joins), Q18 (agregação grande). Hipótese: Q1 e Q6 pouco sensíveis à chave, Q3, Q5 e Q18 muito sensíveis. Confirmar com <code>EXPLAIN ANALYZE</code>.</li>
+    <li><b>Medição:</b> 1 execução de aquecimento e 5 medidas por query, mediana e dispersão. Registrar o tipo de Motion de cada plano.</li>
+    <li><b>Análise:</b> speedup (tempo PostgreSQL ÷ tempo Greenplum) por query e escala, e o ponto em que passa de 1.</li>
+  </ul>
+  <div class="decision">
+    <b>Cuidados</b>
+    <ul>
+      <li>Em uma máquina só, mede-se overhead de MPP e paralelismo local, não a rede entre nós. Dizer isso no seminário.</li>
+      <li>O baseline precisa ser ajustado de verdade (<code>shared_buffers</code>, <code>work_mem</code>, paralelismo), senão o Greenplum parece melhor do que merece.</li>
+      <li>Registrar CPU, RAM, disco e versões. A RAM costuma explicar onde fica o cruzamento.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="ingestao">
+  <h2>5. Ingestão de dados com Airflow</h2>
+  <p>Segunda frente prática: medir o custo de colocar os dados em cada banco, usando um pipeline orquestrado pelo Airflow. Reaproveita os mesmos dados do benchmark.</p>
+
+<pre class="mermaid">
+flowchart LR
+  G[Gerar dados<br/>dbgen] --> P[Carregar no<br/>PostgreSQL]
+  G --> W[Carregar no<br/>Greenplum]
+  P --> AP[ANALYZE]
+  W --> AW[ANALYZE]
+  AP --> V[Validar<br/>contagens]
+  AW --> V
+  V --> Q[Opcional: rodar<br/>queries]
+</pre>
+
+  <h3>Perguntas e hipóteses</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>ID</th><th>Hipótese</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>HI1</td><td>Carga por <code>COPY</code> em uma única conexão não escala com o número de segmentos, porque os dados passam pelo coordinator.</td><td><span class="tag warn">a validar</span></td></tr>
+      <tr><td>HI2</td><td>Um caminho de carga paralelo (tabela externa com <code>gpfdist</code>) escala melhor com o número de segmentos.</td><td><span class="tag warn">a validar</span></td></tr>
+      <tr><td>HI3</td><td>AO-column com compressão carrega mais devagar que heap, mas ocupa bem menos disco.</td><td><span class="tag warn">a validar</span></td></tr>
+      <tr><td>HI4</td><td>Em volumes pequenos, o PostgreSQL carrega mais rápido; a vantagem do Greenplum só aparece em volumes maiores.</td><td><span class="tag warn">a validar</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Métricas</h3>
+  <ul>
+    <li>Linhas por segundo e MB por segundo, por tabela e total.</li>
+    <li>Tempo por etapa: carga, <code>ANALYZE</code>, validação.</li>
+    <li>Tamanho em disco após a carga, por tipo de armazenamento.</li>
+    <li>Efeito da chave de distribuição (E1, E2, E3) no tempo de carga e no skew resultante.</li>
+  </ul>
+
+  <h3>Cuidados com o Airflow</h3>
+  <ul>
+    <li><b>Medir no banco, não na DAG.</b> O tempo de uma task do Airflow inclui agendamento e overhead. Para a comparação, registre o tempo da carga medido dentro da task (ou pelo banco) e reporte o tempo da DAG à parte.</li>
+    <li><b>Banco de metadados separado.</b> O Airflow precisa do próprio banco. Não usar o PostgreSQL ou o Greenplum em teste, para não competir por recursos.</li>
+    <li><b>Windows:</b> o Airflow não roda de forma nativa no Windows. Usar Docker ou WSL2. <span class="tag warn">a validar</span> na versão escolhida.</li>
+    <li><b>Conexão:</b> o Greenplum fala o protocolo do PostgreSQL, então o provider do Postgres para Airflow deve conseguir conectar. Testar cedo. <span class="tag warn">a validar</span></li>
+    <li><b>Repetibilidade:</b> mesma DAG, mesmos arquivos de entrada, tabelas recriadas a cada execução, várias repetições.</li>
+  </ul>
+</section>
+
+<section id="cronograma">
+  <h2>6. Cronograma sugerido</h2>
+  <p class="note">Sem prazo definido ainda. Os blocos abaixo estão em ordem de prioridade.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Etapa</th><th>Entrega</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Ler o artigo do Greenplum e o COST; montar os slides da teoria (seção 2)</td></tr>
+      <tr><td>2</td><td>Definir versão/fork do Greenplum e montar o ambiente (Docker); subir também o PostgreSQL</td></tr>
+      <tr><td>3</td><td>Rodar TPC-H SF1 nos dois sistemas e olhar os planos com Motion</td></tr>
+      <tr><td>4</td><td>Montar a DAG do Airflow e medir a ingestão</td></tr>
+      <tr><td>5</td><td>Escalas maiores e estratégias E1 a E3, se der tempo</td></tr>
+      <tr><td>6</td><td>Consolidar resultados, fechar slides e ensaiar</td></tr>
+    </tbody>
+  </table></div>
+  <div class="decision">
+    <b>Decisões em aberto para o grupo</b>
+    <ul>
+      <li>Duração e formato do seminário definidos pelo professor?</li>
+      <li>Quantos cores e quanta RAM tem a máquina que será usada? Define a escala máxima e o nº de segmentos.</li>
+      <li>Qual versão ou fork do Greenplum será usado?</li>
+      <li>A parte prática entra no seminário ou fica como plano, com resultados só no TCC?</li>
+    </ul>
+  </div>
+</section>
+
+<section id="referencias">
+  <h2>7. Referências</h2>
+  <ul>
+    <li><a href="https://arxiv.org/pdf/2103.11080" target="_blank" rel="noopener">Greenplum: A Hybrid Database for Transactional and Analytical Workloads</a> (SIGMOD 2021). Base da seção 2.</li>
+    <li><a href="https://usenix.org/conference/hotos15/workshop-program/presentation/mcsherry" target="_blank" rel="noopener">Scalability! But at what COST?</a> McSherry, Isard, Murray (HotOS 2015).</li>
+    <li><a href="https://www.enterprisedb.com/blog/benchmarking-postgres-xl" target="_blank" rel="noopener">Benchmarking Postgres-XL</a> (EnterpriseDB), comparação com PostgreSQL de nó único em TPC-H.</li>
+    <li><a href="https://www.citusdata.com/blog/2014/10/31/postgres-scale-hadoop-style/" target="_blank" rel="noopener">Citus: Making PostgreSQL scale Hadoop-style</a>. Benchmark de fornecedor, ler com cautela.</li>
+    <li><a href="https://www.alibabacloud.com/blog/performance-evaluation-methods-for-distributed-mpp-databases---best-practice-for-postgresql_334288" target="_blank" rel="noopener">Performance evaluation methods for distributed MPP databases</a> (Alibaba Cloud), sobre o efeito do skew.</li>
+  </ul>
+  <p class="note">A confirmar antes de citar (de memória): Soliman et al., Orca (SIGMOD 2014); Stonebraker, The Case for Shared Nothing (1986); DeWitt e Gray, Parallel Database Systems (CACM 1992). Para a ingestão, consultar a documentação oficial do Greenplum (carga paralela e tabelas externas) e do provider Postgres do Airflow.</p>
+</section>
+
+<footer>Rascunho do grupo. Nada da parte prática foi executado ainda.</footer>
+</div>

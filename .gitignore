@@ -1,0 +1,16 @@
+# Segredos e chaves (gerados em /opt/lab/whpg, nunca no projeto)
+secrets/
+**/conf/ssh/
+*.pem
+*.key
+
+# Dados gerados (TPC-H, dumps)
+data/
+*.tbl
+*.csv
+
+# Python / Airflow
+__pycache__/
+.venv/
+logs/
+airflow.db
