@@ -3,7 +3,7 @@
 
 Uso: python results/analyze.py [SF]          (padrão: todos os SF encontrados)
 Saída: results/summary_sf<SF>.csv e tabela no terminal. Só usa a biblioteca padrão.
-Speedup = mediana(pg) / mediana(gp, estratégia). Eficiência = speedup / 4 segmentos.
+Speedup = mediana(pg) / mediana(gp, estratégia). Eficiência = speedup / nº de segmentos (gp4 -> 4, gp2 -> 2).
 Se matplotlib estiver instalado, também grava results/speedup_sf<SF>.png.
 """
 import csv
@@ -14,7 +14,6 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SEGMENTOS = 4
 
 
 def iqr(xs):
@@ -43,12 +42,12 @@ def resumir(sf):
     for (sis, schema, q), v in sorted(dados.items(), key=lambda kv: (kv[0][2], kv[0][0], kv[0][1])):
         m = med[(sis, schema, q)]
         base = med.get(("pg", "pg", q))
-        speedup = base / m if (sis == "gp" and base) else ""
+        speedup = base / m if (sis.startswith("gp") and base) else ""
         linhas.append({
             "sf": sf, "query": q, "system": sis, "schema": schema, "n": len(v),
             "median_ms": round(m, 1), "iqr_ms": round(iqr(v), 1),
             "speedup_vs_pg": round(speedup, 2) if speedup != "" else "",
-            "eficiencia": round(speedup / SEGMENTOS, 2) if speedup != "" else "",
+            "eficiencia": round(speedup / int(sis[2:]), 2) if speedup != "" else "",
         })
     return linhas
 
@@ -61,12 +60,12 @@ def grafico(linhas, sf):
     except ImportError:
         return
     qs = sorted({l["query"] for l in linhas})
-    esquemas = sorted({l["schema"] for l in linhas if l["system"] == "gp"})
+    esquemas = sorted({l["system"] + "/" + l["schema"] for l in linhas if l["system"].startswith("gp")})
     largura = 0.8 / max(len(esquemas), 1)
     plt.figure(figsize=(9, 4))
     for i, e in enumerate(esquemas):
         ys = [next((l["speedup_vs_pg"] for l in linhas
-                    if l["query"] == q and l["schema"] == e), 0) or 0 for q in qs]
+                    if l["query"] == q and l["system"] + "/" + l["schema"] == e), 0) or 0 for q in qs]
         plt.bar([x + i * largura for x in range(len(qs))], ys, largura, label=e)
     plt.axhline(1, color="k", lw=0.8, ls="--")
     plt.xticks([x + 0.4 - largura / 2 for x in range(len(qs))], qs)

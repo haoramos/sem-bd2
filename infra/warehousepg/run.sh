@@ -2,6 +2,7 @@
 # Controle do cluster WarehousePG do laboratório (rodar DENTRO do WSL/Ubuntu).
 #
 # Uso: ./run.sh up | down | status | psql [args do psql] | reset
+# SEGS=2 ./run.sh up   sobe a variante com 2 segmentos (padrão: 4). Use `down` antes de trocar.
 #
 # Os arquivos versionados ficam nesta pasta. A execução acontece numa cópia em
 # /opt/lab/whpg (sistema de arquivos do Linux), porque o contêiner precisa alterar
@@ -12,12 +13,18 @@ set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUN=/opt/lab/whpg
 PROJ=whpg
+SEGS=${SEGS:-4}
+case "$SEGS" in
+  4) LAB=lab.yaml;  CFG=gpinitsystem_config_no_mirrors ;;
+  2) LAB=lab2.yaml; CFG=gpinitsystem_config_no_mirrors_2seg ;;
+  *) echo "SEGS deve ser 2 ou 4" >&2; exit 1 ;;
+esac
 GP_ENV='source /usr/local/greenplum-db/greenplum_path.sh'
 
 sync_files() {
   mkdir -p "$RUN/conf/7" "$RUN/conf/ssh" "$RUN/secrets"
-  cp "$SRC/lab.yaml" "$SRC/.env" "$RUN/"
-  cp "$SRC/conf/7/gpinitsystem_config_no_mirrors" "$RUN/conf/7/"
+  cp "$SRC/lab.yaml" "$SRC/lab2.yaml" "$SRC/.env" "$RUN/"
+  cp "$SRC"/conf/7/gpinitsystem_config_no_mirrors* "$RUN/conf/7/"
   cp "$SRC/conf/hostfile_gpinitsystem" "$RUN/conf/"
 
   if [ ! -f "$RUN/conf/ssh/id_rsa" ]; then
@@ -37,7 +44,7 @@ sync_files() {
   done
 }
 
-dc() { (cd "$RUN" && docker compose -p "$PROJ" -f lab.yaml "$@"); }
+dc() { (cd "$RUN" && docker compose -p "$PROJ" -f "$LAB" "$@"); }
 
 wait_ready() {
   echo "Aguardando o cluster (até ~5 min)..."

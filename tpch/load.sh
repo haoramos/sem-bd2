@@ -21,6 +21,7 @@ render_ddl() {
   for kv in "$@"; do
     sed_args+=(-e "s|@D_${kv%%=*}@|${kv#*=}|")
   done
+  sed_args+=(-e 's|@D_[A-Z]*@||')   # o que sobrar fica sem cláusula (PostgreSQL)
   echo "DROP SCHEMA IF EXISTS $schema CASCADE; CREATE SCHEMA $schema; SET search_path=$schema;"
   sed "${sed_args[@]}" "$TPCH_DIR/ddl.sql.in"
 }
