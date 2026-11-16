@@ -8,6 +8,10 @@ secrets/
 data/
 *.tbl
 *.csv
+!results/*.csv
+
+# Código-fonte do dbgen baixado por tpch/gen.sh
+tpch/.dbgen-src/
 
 # Python / Airflow
 __pycache__/

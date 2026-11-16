@@ -13,8 +13,37 @@ infra/warehousepg/   cluster WarehousePG 7.5.0 em Docker (1 coordinator + 4 segm
   run.sh             up | down | status | psql | reset
 ```
 
-Pastas previstas, ainda não criadas: `infra/postgres/` (baseline de nó único),
-`tpch/` (geração de dados e queries), `airflow/` (DAGs de ingestão), `results/`.
+```
+infra/postgres/      baseline PostgreSQL 12 de nó único (porta 5433), mesmo run.sh
+tpch/                gen.sh (dbgen), load.sh (carga pg/gp), ddl.sql.in, queries/q*.sql
+results/             run_bench.sh, explain.sh, analyze.py e os CSVs de medição
+slides/              roteiro dos slides
+```
+
+Fora do escopo do seminário (ficam para o TCC): `airflow/`, Cloudberry, TPC-DS, AO-column.
+
+## Fluxo do benchmark
+
+Dentro do Ubuntu, a partir da raiz do projeto. Um sistema por vez (RAM de 5 GB):
+
+```bash
+tpch/gen.sh 1                                  # dados SF1 em tpch/data/sf1
+sudo infra/postgres/run.sh up && tpch/load.sh pg 1
+results/run_bench.sh pg 1                      # 1 aquecimento + 5 medidas por query
+infra/postgres/run.sh down
+sudo infra/warehousepg/run.sh up && tpch/load.sh gp 1
+results/run_bench.sh gp 1                      # estratégias e1..e4
+results/explain.sh gp e1 q03                   # compare com e2: Motions
+python3 results/analyze.py 1                   # mediana, IQR, speedup, eficiência
+```
+
+Estratégias no Greenplum (schemas): `e1` co-localizada (orders/lineitem por `orderkey`),
+`e2` aleatória, `e3` skew (`lineitem` por `l_returnflag`), `e4` padrão (1ª coluna).
+Foram incluídas as 9 queries foco (Q1, Q3, Q5, Q6, Q9, Q13, Q18, Q21, Q22), com os
+parâmetros de validação do TPC-H; as outras 13 não foram escritas.
+
+**Estado:** scripts escritos em 2026-11-16, ainda **não executados**. O `gen.sh` clona
+`electrum/tpch-dbgen` e o `make` pode precisar de ajuste.
 
 ## Ambiente
 

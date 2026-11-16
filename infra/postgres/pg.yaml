@@ -1,0 +1,39 @@
+# PostgreSQL de nó único: baseline de comparação com o cluster WarehousePG (base PG 12).
+# Rodar um sistema por vez durante as medições (RAM do WSL limitada a 5 GB).
+# Sem volume persistente: um `down` apaga os dados.
+version: '3'
+services:
+  pg:
+    image: ${IMAGE_NAME}:${TAG}
+    container_name: pg_baseline
+    hostname: pg_baseline
+    ports:
+      - "127.0.0.1:${EXPOSE_PG_PORT}:5432"
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+      - POSTGRES_DB=demo
+    secrets:
+      - pg_password
+    shm_size: 1g
+    # Parâmetros de analítico para ~5 GB de RAM. Paralelismo do PG fica ligado
+    # (comparação justa: o baseline usa os núcleos que tem).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - work_mem=64MB
+      - -c
+      - maintenance_work_mem=512MB
+      - -c
+      - effective_cache_size=3GB
+      - -c
+      - max_parallel_workers_per_gather=2
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - jit=off
+
+secrets:
+  pg_password:
+    file: ./secrets/pg_password

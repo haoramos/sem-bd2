@@ -1,6 +1,6 @@
 # This file is used to create a Greenplum cluster with configuration in separate containers:
 # 1 master
-# 2 primary segments without mirrors
+# 2 segment containers (segment1, segment2), each with 2 primaries = 4 primary segments, without mirrors
 # Without persistent volumes.
 
 version: '3'
