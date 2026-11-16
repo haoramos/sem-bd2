@@ -1,0 +1,43 @@
+                                                                                        QUERY PLAN                                                                                        
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.00..2287.81 rows=10 width=24) (actual time=7859.775..7859.794 rows=10 loops=1)
+   ->  Gather Motion 4:1  (slice1; segments: 4)  (cost=0.00..2287.81 rows=10 width=24) (actual time=7859.771..7859.786 rows=10 loops=1)
+         Merge Key: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount)))), orders.o_orderdate
+         ->  Limit  (cost=0.00..2287.81 rows=3 width=24) (actual time=7855.768..7855.784 rows=10 loops=1)
+               ->  Sort  (cost=0.00..2287.81 rows=177284 width=24) (actual time=7855.766..7855.776 rows=10 loops=1)
+                     Sort Key: (sum((lineitem.l_extendedprice * ('1'::numeric - lineitem.l_discount)))) DESC, orders.o_orderdate
+                     Sort Method:  top-N heapsort  Memory: 104kB
+                     Executor Memory: 246kB  Segments: 4  Max: 62kB (segment 0)
+                     ->  HashAggregate  (cost=0.00..1867.17 rows=177284 width=24) (actual time=7853.329..7855.013 rows=2935 loops=1)
+                           Group Key: orders.o_orderdate, lineitem.l_orderkey, orders.o_shippriority
+                           Extra Text: (seg0)   hash table(s): 1; chain length 2.0 avg, 2 max; using 2935 of 262144 buckets; total 0 expansions.
+                           ->  Hash Join  (cost=0.00..1799.54 rows=177284 width=28) (actual time=314.981..7837.045 rows=7736 loops=1)
+                                 Hash Cond: (lineitem.l_orderkey = orders.o_orderkey)
+                                 Extra Text: (seg0)   Hash chain length 1.1 avg, 4 max, using 34233 of 262144 buckets.
+                                 ->  Seq Scan on lineitem  (cost=0.00..641.10 rows=809477 width=20) (actual time=0.962..7374.500 rows=812685 loops=1)
+                                       Filter: (l_shipdate > '1995-03-15'::date)
+                                       Rows Removed by Filter: 690675
+                                 ->  Hash  (cost=960.35..960.35 rows=65130 width=16) (actual time=315.547..315.552 rows=37040 loops=1)
+                                       Buckets: 262144  Batches: 1  Memory Usage: 3785kB
+                                       ->  Hash Join  (cost=0.00..960.35 rows=65130 width=16) (actual time=92.240..302.061 rows=37040 loops=1)
+                                             Hash Cond: (orders.o_custkey = customer.c_custkey)
+                                             Extra Text: (seg2)   Hash chain length 1.1 avg, 4 max, using 28396 of 262144 buckets.
+                                             ->  Seq Scan on orders  (cost=0.00..479.17 rows=181559 width=20) (actual time=2.013..161.612 rows=182102 loops=1)
+                                                   Filter: (o_orderdate < '1995-03-15'::date)
+                                                   Rows Removed by Filter: 192552
+                                             ->  Hash  (cost=438.00..438.00 rows=30195 width=4) (actual time=88.841..88.842 rows=30142 loops=1)
+                                                   Buckets: 262144  Batches: 1  Memory Usage: 3108kB
+                                                   ->  Broadcast Motion 4:4  (slice2; segments: 4)  (cost=0.00..438.00 rows=30195 width=4) (actual time=0.277..80.718 rows=30142 loops=1)
+                                                         ->  Seq Scan on customer  (cost=0.00..436.34 rows=7549 width=4) (actual time=1.709..89.095 rows=7598 loops=1)
+                                                               Filter: (c_mktsegment = 'BUILDING'::bpchar)
+                                                               Rows Removed by Filter: 29936
+ Optimizer: GPORCA
+ Planning Time: 28.333 ms
+   (slice0)    Executor memory: 6233K bytes.
+ * (slice1)    Executor memory: 13227K bytes avg x 4 workers, 13251K bytes max (seg2).  Work_mem: 7185K bytes max, 7185K bytes wanted.
+   (slice2)    Executor memory: 37K bytes avg x 4 workers, 37K bytes max (seg0).
+ Memory used:  128000kB
+ Memory wanted:  29636kB
+ Execution Time: 7874.057 ms
+(39 rows)
+
