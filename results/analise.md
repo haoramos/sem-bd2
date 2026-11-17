@@ -27,14 +27,29 @@ Os tempos seguem a contagem: Q18 SF3 = 7,3 s (e1), 10,5 s (e4), 15,2 s (e3), 68,
 ## 3. Skew (HI3)
 e3 (`lineitem` por `l_returnflag`, só 3 valores) concentra as linhas em poucos segmentos:
 pior ou quase pior caso em Q1, Q3, Q5, Q6 e Q9. Q9 em SF3 com 4 segmentos: 50,1 s (e3) contra 3,5 s (e4).
-Com 2 segmentos o mesmo caso levou 4,4 s: não explicado, desconfio de variação do planejador
-(plano diferente), mas não verifiquei o plano.
+Com 2 segmentos o mesmo caso levou 4,4 s no benchmark.
+Reexecutado depois (ver seção 5), Q9/e3 levou 8 a 16 s com 4 e com 2 segmentos: a anomalia de
+50 s não se reproduziu. O skew em si é real: no plano, o segmento mais carregado leu 13,6 milhões
+de linhas de `lineitem`, contra 4,5 milhões em e4.
 
 ## 4. Escala com o número de segmentos
 Reduzir de 4 para 2 segmentos costuma custar 1,3x a 1,9x, abaixo do 2x ideal: parte do tempo não
 escala (Motions, coordenação, e os segmentos compartilham os mesmos 8 núcleos).
 Eficiência (speedup/segmentos) fica entre 0,1 e 0,9 em SF1; maior em Q13 e Q3.
-Anomalia: Q21 SF3 e1 com 2 segmentos = 37,0 s (contra 7,4 s com 4). Não investigado.
+Anomalia: Q21 SF3 e1 com 2 segmentos = 37,0 s (contra 7,4 s com 4). Ver seção 5.
+
+## 5. Investigação das anomalias do SF3
+Reexecução (EXPLAIN ANALYZE + 3 medidas) de Q21 e1/e4 e Q9 e3/e4 com 4 e 2 segmentos, mesmo SF3.
+- Q21/e1: o plano usa hash join que não cabe em memória e grava arquivos temporários em disco
+  (11 menções de workfile/spill, contra 4 em e4). Tempos: 6,9 a 14,6 s com 4 segmentos e 12,5 a 28,5 s
+  com 2, contra 3,1 a 4,1 s e 5,2 a 5,7 s em e4. Ou seja, e1 é mesmo pior que e4 nesta query, mas o 37 s
+  do benchmark (28 a 81 s nas 5 medidas) foi mais lento que qualquer reexecução.
+- Q9/e3: skew confirmado no plano (13,6 milhões de linhas em um segmento). Reexecução: 8,1 a 15,8 s
+  com 4 segmentos (benchmark: 31 a 56 s) e 8,1 a 13,8 s com 2.
+- Conclusão: o efeito qualitativo (spill em Q21/e1, skew em Q9/e3) é real, mas a magnitude do
+  benchmark original foi inflada por algo transitório que não identifiquei (a máquina tem 4,9 GB de
+  RAM para todos os contêineres; não monitorei memória do host durante as medições).
+  Os números de SF3 dessas células não devem ser citados como precisos; repetir após reiniciar o WSL.
 
 ## Limites
 - Contêineres num só host: mede a arquitetura, não rede ou discos de verdade.

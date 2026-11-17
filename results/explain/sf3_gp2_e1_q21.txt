@@ -1,0 +1,88 @@
+                                                                                                QUERY PLAN                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.00..14609.12 rows=100 width=34) (actual time=48375.926..48376.146 rows=100 loops=1)
+   ->  Gather Motion 2:1  (slice1; segments: 2)  (cost=0.00..14609.11 rows=100 width=34) (actual time=48375.923..48376.129 rows=100 loops=1)
+         Merge Key: (count()), supplier.s_name
+         ->  Limit  (cost=0.00..14609.10 rows=50 width=34) (actual time=48369.770..48369.809 rows=100 loops=1)
+               ->  Sort  (cost=0.00..14609.10 rows=15000 width=34) (actual time=48369.760..48369.788 rows=100 loops=1)
+                     Sort Key: (count()) DESC, supplier.s_name
+                     Sort Method:  top-N heapsort  Memory: 76kB
+                     Executor Memory: 119kB  Segments: 2  Max: 60kB (segment 0)
+                     ->  HashAggregate  (cost=0.00..14568.98 rows=15000 width=34) (actual time=48367.560..48367.727 rows=627 loops=1)
+                           Group Key: supplier.s_name
+                           Extra Text: (seg0)   hash table(s): 1; chain length 1.5 avg, 2 max; using 607 of 32768 buckets; total 0 expansions.
+                           ->  Redistribute Motion 2:2  (slice2; segments: 2)  (cost=0.00..14564.19 rows=36424 width=26) (actual time=43094.989..48363.431 rows=6270 loops=1)
+                                 Hash Key: supplier.s_name
+                                 ->  Hash Join  (cost=0.00..14561.22 rows=36424 width=26) (actual time=43096.540..48360.319 rows=6221 loops=1)
+                                       Hash Cond: (orders.o_orderkey = l1.l_orderkey)
+                                       Extra Text: (seg1)   Hash chain length 1.1 avg, 4 max, using 11468 of 65536 buckets.
+                                       ->  Seq Scan on orders  (cost=0.00..699.84 rows=1092965 width=8) (actual time=1.264..5114.234 rows=1096650 loops=1)
+                                             Filter: (o_orderstatus = 'F'::bpchar)
+                                             Rows Removed by Filter: 1153697
+                                       ->  Hash  (cost=13631.03..13631.03 rows=36424 width=34) (actual time=43088.953..43088.963 rows=12603 loops=1)
+                                             Buckets: 65536  Batches: 1  Memory Usage: 1399kB
+                                             ->  Hash Semi Join  (cost=0.00..13631.03 rows=36424 width=34) (actual time=38791.458..43084.734 rows=12603 loops=1)
+                                                   Hash Cond: (l1.l_orderkey = l2.l_orderkey)
+                                                   Join Filter: (l2.l_suppkey <> l1.l_suppkey)
+                                                   Rows Removed by Join Filter: 13198
+                                                   Extra Text: (seg1)   Initial batch 0:
+ (seg1)     Wrote 263684K bytes to inner workfile.
+ (seg1)     Wrote 1235K bytes to outer workfile.
+ (seg1)   Initial batches 1..15:
+ (seg1)     Read 263684K bytes from inner workfile: 17579K avg x 15 nonempty batches, 17686K max.
+ (seg1)     Read 1235K bytes from outer workfile: 83K avg x 15 nonempty batches, 86K max.
+ (seg1)   Work file set: 30 files (0 compressed), avg file size 9025399, compression buffer size 0 bytes.
+ (seg1)   Hash chain length 5.2 avg, 38 max, using 1741652 of 4194304 buckets.
+                                                   ->  Hash Anti Join  (cost=0.00..7107.47 rows=36424 width=38) (actual time=18178.068..21055.247 rows=21106 loops=1)
+                                                         Hash Cond: (l1.l_orderkey = l3.l_orderkey)
+                                                         Join Filter: (l3.l_suppkey <> l1.l_suppkey)
+                                                         Rows Removed by Join Filter: 84734
+                                                         Extra Text: (seg1)   Initial batch 0:
+ (seg1)     Wrote 166725K bytes to inner workfile.
+ (seg1)     Wrote 13766K bytes to outer workfile.
+ (seg1)   Initial batches 1..7:
+ (seg1)     Read 154017K bytes from inner workfile: 22003K avg x 7 nonempty batches, 22068K max.
+ (seg1)     Wrote 76111K bytes to inner workfile: 10873K avg x 7 overflowing batches, 10941K max.
+ (seg1)     Read 6431K bytes from outer workfile: 919K avg x 7 nonempty batches, 929K max.
+ (seg1)   Overflow batches 8..15:
+ (seg1)     Read 88818K bytes from inner workfile: 11103K avg x 8 nonempty batches, 11182K max.
+ (seg1)     Read 7335K bytes from outer workfile: 917K avg x 8 nonempty batches, 931K max.
+ (seg1)   Work file set: 30 files (0 compressed), avg file size 6145092, compression buffer size 0 bytes.
+ (seg1)   Hash chain length 3.5 avg, 27 max, using 1629740 of 4194304 buckets.
+                                                         ->  Hash Join  (cost=0.00..3444.59 rows=143976 width=38) (actual time=1.711..1516.136 rows=234894 loops=1)
+                                                               Hash Cond: (l1.l_suppkey = supplier.s_suppkey)
+                                                               Extra Text: (seg1)   Hash chain length 1.0 avg, 2 max, using 1215 of 65536 buckets.
+                                                               ->  Seq Scan on lineitem l1  (cost=0.00..1904.32 rows=3599379 width=12) (actual time=0.168..1146.916 rows=5689879 loops=1)
+                                                                     Filter: (l_receiptdate > l_commitdate)
+                                                                     Rows Removed by Filter: 3309042
+                                                               ->  Hash  (cost=868.31..868.31 rows=1200 width=30) (actual time=0.569..0.570 rows=1234 loops=1)
+                                                                     Buckets: 65536  Batches: 1  Memory Usage: 587kB
+                                                                     ->  Broadcast Motion 2:2  (slice3; segments: 2)  (cost=0.00..868.31 rows=1200 width=30) (actual time=0.133..0.474 rows=1234 loops=1)
+                                                                           ->  Hash Join  (cost=0.00..867.37 rows=600 width=30) (actual time=6.848..104.997 rows=629 loops=1)
+                                                                                 Hash Cond: (supplier.s_nationkey = nation.n_nationkey)
+                                                                                 Extra Text: (seg0)   Hash chain length 1.0 avg, 1 max, using 1 of 131072 buckets.
+                                                                                 ->  Seq Scan on supplier  (cost=0.00..432.44 rows=15000 width=34) (actual time=2.453..18.656 rows=15031 loops=1)
+                                                                                 ->  Hash  (cost=431.00..431.00 rows=1 width=4) (actual time=1.091..1.092 rows=1 loops=1)
+                                                                                       Buckets: 131072  Batches: 1  Memory Usage: 1025kB
+                                                                                       ->  Seq Scan on nation  (cost=0.00..431.00 rows=1 width=4) (actual time=0.424..0.428 rows=1 loops=1)
+                                                                                             Filter: (n_name = 'SAUDI ARABIA'::bpchar)
+                                                                                             Rows Removed by Filter: 24
+                                                         ->  Hash  (cost=1904.32..1904.32 rows=3599379 width=12) (actual time=17873.328..17873.329 rows=5689879 loops=1)
+                                                               Buckets: 262144 (originally 262144)  Batches: 16 (originally 8)  Memory Usage: 29828kB
+                                                               ->  Seq Scan on lineitem l3  (cost=0.00..1904.32 rows=3599379 width=12) (actual time=0.420..16029.739 rows=5689879 loops=1)
+                                                                     Filter: (l_receiptdate > l_commitdate)
+                                                                     Rows Removed by Filter: 3309042
+                                                   ->  Hash  (cost=1178.32..1178.32 rows=8998446 width=12) (actual time=20892.235..20892.236 rows=8998921 loops=1)
+                                                         Buckets: 262144  Batches: 16  Memory Usage: 26211kB
+                                                         ->  Seq Scan on lineitem l2  (cost=0.00..1178.32 rows=8998446 width=12) (actual time=1.793..17190.793 rows=8998921 loops=1)
+ Optimizer: GPORCA
+ Planning Time: 559.914 ms
+   (slice0)    Executor memory: 905K bytes.
+ * (slice1)    Executor memory: 855K bytes avg x 2 workers, 856K bytes max (seg1).  Work_mem: 913K bytes max, 913K bytes wanted.
+ * (slice2)    Executor memory: 64457K bytes avg x 2 workers, 64489K bytes max (seg0).  Work_mem: 29828K bytes max, 388721K bytes wanted.
+   (slice3)    Executor memory: 1092K bytes avg x 2 workers, 1092K bytes max (seg1).  Work_mem: 1025K bytes max.
+ Memory used:  128000kB
+ Memory wanted:  2722642kB
+ Execution Time: 48407.977 ms
+(84 rows)
+
